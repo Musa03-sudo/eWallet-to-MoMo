@@ -1,0 +1,1074 @@
+
+/* ---------------------------------------
+   GLOBAL STYLES
+--------------------------------------- */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  background: #f3f6fb;
+  color: #1f2937;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------------------------------------
+   HEADER
+--------------------------------------- */
+
+.app-header {
+  background: #102b50;
+  color: #ffffff;
+  min-height: 85px;
+  padding: 18px 6%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.brand-icon {
+  height: 48px;
+  width: 48px;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #102b50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 25px;
+  font-weight: 800;
+}
+
+.brand h1 {
+  font-size: 21px;
+  margin-bottom: 5px;
+}
+
+.brand p {
+  color: #cbd5e1;
+  font-size: 13px;
+}
+
+.status-indicator,
+.network-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.status-dot {
+  width: 9px;
+  height: 9px;
+  background: #22c55e;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* ---------------------------------------
+   MAIN SIMULATOR
+--------------------------------------- */
+
+.simulator {
+  width: 100%;
+  max-width: 950px;
+  margin: 38px auto;
+  padding: 0 20px;
+  flex: 1;
+}
+
+.simulator-content {
+  background: #ffffff;
+  border: 1px solid #e5eaf1;
+  border-radius: 14px;
+  padding: 28px;
+  box-shadow: 0 8px 25px rgba(15, 23, 42, 0.06);
+}
+
+/* ---------------------------------------
+   TABS
+--------------------------------------- */
+
+.tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.tab {
+  flex: 1;
+  min-height: 54px;
+  border: 1px solid #dce3ed;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #475569;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.tab:hover {
+  background: #f1f5f9;
+}
+
+.tab.active {
+  background: #102b50;
+  border-color: #102b50;
+  color: #ffffff;
+}
+
+.momo-tab.active {
+  background: #eab308;
+  border-color: #eab308;
+  color: #1f2937;
+}
+
+.tab-icon {
+  margin-right: 9px;
+}
+
+/* ---------------------------------------
+   SECTION HEADING
+--------------------------------------- */
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 24px;
+}
+
+.section-heading h2 {
+  color: #102b50;
+  font-size: 21px;
+  margin-bottom: 7px;
+}
+
+.section-heading p {
+  font-size: 14px;
+  color: #64748b;
+}
+
+.network-status {
+  color: #16a34a;
+  white-space: nowrap;
+}
+
+/* ---------------------------------------
+   USSD DISPLAY
+--------------------------------------- */
+
+.ussd-display {
+  width: 100%;
+  min-height: 390px;
+  background: #f8fafc;
+  border: 1px solid #dce3ed;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.display-top {
+  min-height: 43px;
+  background: #102b50;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 18px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+}
+
+.display-messages {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 14px;
+  overflow-y: auto;
+  max-height: 430px;
+  width: 100%;
+}
+
+/* ---------------------------------------
+   SYSTEM MESSAGE
+   Transparent box centred horizontally.
+   Text remains left-aligned.
+--------------------------------------- */
+
+.message {
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.system-message {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.system-message .message-label {
+  width: 100%;
+  max-width: 370px;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: left;
+  margin-bottom: 5px;
+  padding: 0 14px;
+}
+
+.system-message .message-text {
+  width: 100%;
+  max-width: 370px;
+  margin: 0 auto;
+  padding: 12px 14px;
+
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+
+  color: #172033;
+  text-align: left;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.75;
+}
+
+/* ---------------------------------------
+   USER MESSAGE
+--------------------------------------- */
+
+.user-message {
+  align-self: flex-end;
+  max-width: 75%;
+  margin-top: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.user-message .message-label {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+.user-message .message-text {
+  background: #dbeafe;
+  color: #1e3a8a;
+  padding: 10px 15px;
+  border-radius: 12px 12px 2px 12px;
+  text-align: left;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* ---------------------------------------
+   RESPONSE FORM
+--------------------------------------- */
+
+.response-form {
+  margin-top: 24px;
+}
+
+.response-form label {
+  display: block;
+  margin-bottom: 9px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.input-row {
+  display: flex;
+  gap: 10px;
+}
+
+.input-row input {
+  flex: 1;
+  min-width: 0;
+  height: 48px;
+  padding: 0 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  outline: none;
+  background: #ffffff;
+  color: #1e293b;
+}
+
+.input-row input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.input-row input:disabled {
+  background: #f1f5f9;
+  cursor: not-allowed;
+}
+
+.send-button {
+  min-width: 95px;
+  height: 48px;
+  border: none;
+  border-radius: 8px;
+  background: #102b50;
+  color: #ffffff;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.send-button:hover:not(:disabled) {
+  background: #1e40af;
+}
+
+.send-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.response-form small {
+  display: block;
+  color: #64748b;
+  margin-top: 9px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* ---------------------------------------
+   SESSION ACTIONS
+--------------------------------------- */
+
+.session-actions {
+  margin-top: 24px;
+  border-top: 1px solid #e5eaf1;
+  padding-top: 18px;
+}
+
+.session-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.reset-button {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  padding: 10px 15px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.reset-button:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+/* ---------------------------------------
+   FOOTER
+--------------------------------------- */
+
+.app-footer {
+  background: #102b50;
+  color: #cbd5e1;
+  text-align: center;
+  padding: 20px 15px;
+  font-size: 12px;
+  line-height: 1.8;
+  margin-top: auto;
+}
+
+/* ---------------------------------------
+   SCROLLBAR
+--------------------------------------- */
+
+.display-messages::-webkit-scrollbar {
+  width: 6px;
+}
+
+.display-messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.display-messages::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+/* ---------------------------------------
+   RESPONSIVE DESIGN
+--------------------------------------- */
+
+@media (max-width: 650px) {
+  .app-header {
+    padding: 16px;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .brand h1 {
+    font-size: 18px;
+  }
+
+  .simulator {
+    margin: 20px auto;
+    padding: 0 12px;
+  }
+
+  .simulator-content {
+    padding: 17px;
+  }
+
+  .tabs {
+    gap: 7px;
+  }
+
+  .tab {
+    font-size: 12px;
+    padding: 8px 5px;
+  }
+
+  .tab-icon {
+    margin-right: 4px;
+  }
+
+  .section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .network-status {
+    font-size: 12px;
+  }
+
+  .ussd-display {
+    min-height: 350px;
+  }
+
+  .display-messages {
+    padding: 18px 8px;
+  }
+
+  .system-message .message-text,
+  .system-message .message-label {
+    max-width: 100%;
+  }
+
+  .input-row {
+    flex-direction: column;
+  }
+
+  .send-button {
+    width: 100%;
+  }
+
+  .session-buttons {
+    flex-direction: column;
+  }
+
+  .reset-button {
+    width: 100%;
+  }
+}
+
+/* ---------------------------------------
+   GLOBAL STYLES
+--------------------------------------- */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  background: #f3f6fb;
+  color: #1f2937;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------------------------------------
+   HEADER
+--------------------------------------- */
+
+.app-header {
+  background: #102b50;
+  color: #ffffff;
+  min-height: 85px;
+  padding: 18px 6%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.brand-icon {
+  height: 48px;
+  width: 48px;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #102b50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 25px;
+  font-weight: 800;
+}
+
+.brand h1 {
+  font-size: 21px;
+  margin-bottom: 5px;
+}
+
+.brand p {
+  color: #cbd5e1;
+  font-size: 13px;
+}
+
+.status-indicator,
+.network-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.status-dot {
+  width: 9px;
+  height: 9px;
+  background: #22c55e;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* ---------------------------------------
+   MAIN SIMULATOR
+--------------------------------------- */
+
+.simulator {
+  width: 100%;
+  max-width: 950px;
+  margin: 38px auto;
+  padding: 0 20px;
+  flex: 1;
+}
+
+.simulator-content {
+  background: #ffffff;
+  border: 1px solid #e5eaf1;
+  border-radius: 14px;
+  padding: 28px;
+  box-shadow: 0 8px 25px rgba(15, 23, 42, 0.06);
+}
+
+/* ---------------------------------------
+   TABS
+--------------------------------------- */
+
+.tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.tab {
+  flex: 1;
+  min-height: 54px;
+  border: 1px solid #dce3ed;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #475569;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.tab:hover {
+  background: #f1f5f9;
+}
+
+.tab.active {
+  background: #102b50;
+  border-color: #102b50;
+  color: #ffffff;
+}
+
+.momo-tab.active {
+  background: #eab308;
+  border-color: #eab308;
+  color: #1f2937;
+}
+
+.tab-icon {
+  margin-right: 9px;
+}
+
+/* ---------------------------------------
+   SECTION HEADING
+--------------------------------------- */
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 24px;
+}
+
+.section-heading h2 {
+  color: #102b50;
+  font-size: 21px;
+  margin-bottom: 7px;
+}
+
+.section-heading p {
+  font-size: 14px;
+  color: #64748b;
+}
+
+.network-status {
+  color: #16a34a;
+  white-space: nowrap;
+}
+
+/* ---------------------------------------
+   USSD DISPLAY
+--------------------------------------- */
+
+.ussd-display {
+  width: 100%;
+  min-height: 390px;
+  background: #f8fafc;
+  border: 1px solid #dce3ed;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.display-top {
+  min-height: 43px;
+  background: #102b50;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 18px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+}
+
+.display-messages {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 14px;
+  overflow-y: auto;
+  max-height: 430px;
+  width: 100%;
+}
+
+/* ---------------------------------------
+   SYSTEM MESSAGE
+   Transparent box centred horizontally.
+   Text remains left-aligned.
+--------------------------------------- */
+
+.message {
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.system-message {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.system-message .message-label {
+  width: 100%;
+  max-width: 370px;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: left;
+  margin-bottom: 5px;
+  padding: 0 14px;
+}
+
+.system-message .message-text {
+  width: 100%;
+  max-width: 370px;
+  margin: 0 auto;
+  padding: 12px 14px;
+
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+
+  color: #172033;
+  text-align: left;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.75;
+}
+
+/* ---------------------------------------
+   USER MESSAGE
+--------------------------------------- */
+
+.user-message {
+  align-self: flex-end;
+  max-width: 75%;
+  margin-top: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.user-message .message-label {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+.user-message .message-text {
+  background: #dbeafe;
+  color: #1e3a8a;
+  padding: 10px 15px;
+  border-radius: 12px 12px 2px 12px;
+  text-align: left;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* ---------------------------------------
+   RESPONSE FORM
+--------------------------------------- */
+
+.response-form {
+  margin-top: 24px;
+}
+
+.response-form label {
+  display: block;
+  margin-bottom: 9px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.input-row {
+  display: flex;
+  gap: 10px;
+}
+
+.input-row input {
+  flex: 1;
+  min-width: 0;
+  height: 48px;
+  padding: 0 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  outline: none;
+  background: #ffffff;
+  color: #1e293b;
+}
+
+.input-row input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.input-row input:disabled {
+  background: #f1f5f9;
+  cursor: not-allowed;
+}
+
+.send-button {
+  min-width: 95px;
+  height: 48px;
+  border: none;
+  border-radius: 8px;
+  background: #102b50;
+  color: #ffffff;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.send-button:hover:not(:disabled) {
+  background: #1e40af;
+}
+
+.send-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.response-form small {
+  display: block;
+  color: #64748b;
+  margin-top: 9px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* ---------------------------------------
+   SESSION ACTIONS
+--------------------------------------- */
+
+.session-actions {
+  margin-top: 24px;
+  border-top: 1px solid #e5eaf1;
+  padding-top: 18px;
+}
+
+.session-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.reset-button {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  padding: 10px 15px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.reset-button:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+/* ---------------------------------------
+   FOOTER
+--------------------------------------- */
+
+.app-footer {
+  background: #102b50;
+  color: #cbd5e1;
+  text-align: center;
+  padding: 20px 15px;
+  font-size: 12px;
+  line-height: 1.8;
+  margin-top: auto;
+}
+
+/* ---------------------------------------
+   SCROLLBAR
+--------------------------------------- */
+
+.display-messages::-webkit-scrollbar {
+  width: 6px;
+}
+
+.display-messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.display-messages::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+/* ---------------------------------------
+   RESPONSIVE DESIGN
+--------------------------------------- */
+
+@media (max-width: 650px) {
+  .app-header {
+    padding: 16px;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .brand h1 {
+    font-size: 18px;
+  }
+
+  .simulator {
+    margin: 20px auto;
+    padding: 0 12px;
+  }
+
+  .simulator-content {
+    padding: 17px;
+  }
+
+  .tabs {
+    gap: 7px;
+  }
+
+  .tab {
+    font-size: 12px;
+    padding: 8px 5px;
+  }
+
+  .tab-icon {
+    margin-right: 4px;
+  }
+
+  .section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .network-status {
+    font-size: 12px;
+  }
+
+  .ussd-display {
+    min-height: 350px;
+  }
+
+  .display-messages {
+    padding: 18px 8px;
+  }
+
+  .system-message .message-text,
+  .system-message .message-label {
+    max-width: 100%;
+  }
+
+  .input-row {
+    flex-direction: column;
+  }
+
+  .send-button {
+    width: 100%;
+  }
+
+  .session-buttons {
+    flex-direction: column;
+  }
+
+  .reset-button {
+    width: 100%;
+  }
+}
+
+
+/* ---------------------------------------
+   SERVICE-SPECIFIC THEMES
+--------------------------------------- */
+
+/* Uneswa eWallet: deep green inspired by the crest */
+.theme-ewallet {
+  --service-color: #176b45;
+  --service-color-hover: #125638;
+  --service-focus-ring: rgba(23, 107, 69, 0.14);
+  --service-text: #ffffff;
+}
+
+/* MTN MoMo: brand yellow with dark text */
+.theme-momo {
+  --service-color: #ffcc00;
+  --service-color-hover: #e6b800;
+  --service-focus-ring: rgba(255, 204, 0, 0.22);
+  --service-text: #202020;
+}
+
+/* Active tab colour */
+.theme-ewallet .ewallet-tab.active,
+.theme-momo .momo-tab.active {
+  background: var(--service-color);
+  border-color: var(--service-color);
+  color: var(--service-text);
+}
+
+/* USSD display header follows the selected tab */
+.theme-ewallet .display-top,
+.theme-momo .display-top {
+  background: var(--service-color);
+  color: var(--service-text);
+}
+
+/* Send button follows the selected tab */
+.theme-ewallet .send-button,
+.theme-momo .send-button {
+  background: var(--service-color);
+  color: var(--service-text);
+}
+
+.theme-ewallet .send-button:hover:not(:disabled),
+.theme-momo .send-button:hover:not(:disabled) {
+  background: var(--service-color-hover);
+}
+
+/* Input focus follows the selected tab */
+.theme-ewallet .input-row input:focus,
+.theme-momo .input-row input:focus {
+  border-color: var(--service-color);
+  box-shadow: 0 0 0 3px var(--service-focus-ring);
+}
+
+/* Section heading accent */
+.theme-ewallet .section-heading h2 {
+  color: #176b45;
+}
+
+.theme-momo .section-heading h2 {
+  color: #8a6a00;
+}

@@ -1,0 +1,321 @@
+-- =====================================================================
+--  eWallet-to-MoMo : DATABASE SCHEMA (MySQL 8.0+)
+--  Source: https://github.com/Musa03-sudo/eWallet-to-MoMo
+--
+--  The repository contains no .sql files, so this schema is
+--  RECONSTRUCTED from:
+--    * every SQL statement in bankingAppBackend/
+--    * the table screenshots shared during development
+--
+--  Each table is tagged with how certain it is:
+--    [CONFIRMED]  column list and types seen in a screenshot or
+--                 in the SQL that creates/changes the table
+--    [FROM CODE]  column names come from the backend SELECT/INSERT
+--                 statements; types and constraints are inferred
+--    [INFERRED]   the view definition, enum values that were not
+--                 visible, and CHECK constraints are design choices
+--
+--  Before relying on it, compare with your live database:
+--    SHOW CREATE TABLE <name>;   or   mysqldump --no-data
+--
+--  The database name below is a placeholder. Use the value of
+--  DB_NAME from your .env file.
+-- =====================================================================
+
+CREATE DATABASE IF NOT EXISTS banking_db
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+
+USE banking_db;
+
+-- ---------------------------------------------------------------------
+-- DESIGN RULE
+-- Four separate "institutions" share one MySQL database:
+--   1. Uneswa Bank   : banking_app
+--   2. Uneswa eWallet: ewallet_*  (+ the unregistered_* view)
+--   3. MTN MoMo      : momo_*
+--   4. CBE switch    : cbe_*
+-- Foreign keys exist only INSIDE an institution. Between institutions
+-- the tables are linked only by a shared value (the CBE reference
+-- number, a phone number or a voucher code), never by a foreign key,
+-- so the services stay independent exactly as in the code.
+-- ---------------------------------------------------------------------
+
+
+-- =====================================================================
+-- 1. UNESWA BANK
+-- =====================================================================
+
+-- [FROM CODE] authController, accountController, ewalletController
+-- Customer bank accounts. Debited when a customer sends an eWallet
+-- (bank -> wallet credit, or a new voucher).
+CREATE TABLE banking_app (
+  account_number  BIGINT        NOT NULL,
+  full_name       VARCHAR(120)  NOT NULL,
+  email           VARCHAR(120)  NOT NULL,
+  cellphone       VARCHAR(11)   NOT NULL,                 -- 268XXXXXXXX
+  password_hash   VARCHAR(255)  NOT NULL,                 -- bcrypt
+  balance         DECIMAL(15,2) NOT NULL DEFAULT 0.00,
+  currency        VARCHAR(5)    NOT NULL DEFAULT 'SZL',
+  status          ENUM('ACTIVE','INACTIVE','BLOCKED')
+                                NOT NULL DEFAULT 'ACTIVE',
+  created_at      TIMESTAMP     NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at      TIMESTAMP     NULL DEFAULT CURRENT_TIMESTAMP
+                                ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (account_number),
+  UNIQUE KEY uq_banking_email (email),
+  UNIQUE KEY uq_banking_cellphone (cellphone),
+  CONSTRAINT chk_banking_balance CHECK (balance >= 0)
+) ENGINE=InnoDB;
+
+
+-- =====================================================================
+-- 2. UNESWA eWALLET
+-- =====================================================================
+
+-- [CONFIRMED] columns from screenshot; USSD registration creates rows
+-- with name/surname NULL until KYC (hence the BETA account type).
+CREATE TABLE ewallet_customers (
+  phone_number               VARCHAR(11)   NOT NULL,      -- 268XXXXXXXX
+  name                       VARCHAR(100)  NULL,
+  surname                    VARCHAR(100)  NULL,
+  national_id                VARCHAR(30)   NOT NULL,
+  transaction_password_hash  VARCHAR(255)  NOT NULL,      -- bcrypt of 5-digit PIN
+  password_created_at        TIMESTAMP     NULL,
+  status                     ENUM('ACTIVE','INACTIVE','BLOCKED')
+                                           NOT NULL DEFAULT 'ACTIVE',
+  created_at                 TIMESTAMP     NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at                 TIMESTAMP     NULL DEFAULT CURRENT_TIMESTAMP
+                                           ON UPDATE CURRENT_TIMESTAMP,
+  wallet_balance             DECIMAL(15,2) NOT NULL DEFAULT 0.00,
+  currency                   VARCHAR(5)    NOT NULL DEFAULT 'SZL',
+  account_type               ENUM('BETA','STANDARD')
+                                           NOT NULL DEFAULT 'BETA',
+  PRIMARY KEY (phone_number),
+  UNIQUE KEY uq_ewallet_national_id (national_id),
+  CONSTRAINT chk_ewallet_balance CHECK (wallet_balance >= 0)
+) ENGINE=InnoDB;
+
+-- [FROM CODE] ewalletController (create), ewalletTransferController (read)
+-- A voucher is money sent to a person who has no eWallet yet. It is
+-- created by debiting the sender's bank account.
+CREATE TABLE ewallet_voucher (
+  voucher_id             BIGINT        NOT NULL AUTO_INCREMENT,
+  voucher_code           VARCHAR(50)   NOT NULL,          -- 10 hex characters
+  sender_account_number  BIGINT        NOT NULL,
+  recipient_cellphone    VARCHAR(11)   NOT NULL,
+  amount                 DECIMAL(15,2) NOT NULL,          -- original value
+  remaining_balance      DECIMAL(15,2) NOT NULL,
+  transferred_amount     DECIMAL(15,2) NOT NULL DEFAULT 0.00,
+  reserved_balance       DECIMAL(15,2) NOT NULL DEFAULT 0.00,
+  currency               VARCHAR(5)    NOT NULL DEFAULT 'SZL',
+  pin_hash               VARCHAR(255)  NOT NULL,          -- bcrypt of 5-digit voucher PIN
+  status                 ENUM('ACTIVE','PARTIALLY_USED','USED','EXPIRED','CANCELLED')
+                                       NOT NULL DEFAULT 'ACTIVE',
+                         -- code only uses ACTIVE and PARTIALLY_USED;
+                         -- the other values are [INFERRED]
+  created_at             TIMESTAMP     NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at             TIMESTAMP     NULL DEFAULT CURRENT_TIMESTAMP
+                                       ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (voucher_id),
+  UNIQUE KEY uq_voucher_code (voucher_code),
+  KEY idx_voucher_sender (sender_account_number),
+  KEY idx_voucher_recipient (recipient_cellphone),
+  KEY idx_voucher_status (status),
+  CONSTRAINT fk_voucher_sender
+    FOREIGN KEY (sender_account_number) REFERENCES banking_app (account_number),
+  CONSTRAINT chk_voucher_amounts
+    CHECK (remaining_balance >= 0 AND reserved_balance >= 0
+           AND reserved_balance <= remaining_balance)
+) ENGINE=InnoDB;
+
+-- [CONFIRMED] columns from screenshot (DESCRIBE ewallet_transactions).
+-- Used by the Android "send eWallet" flow (bank -> wallet credits).
+-- NOTE: the third value of transaction_type was cut off in the
+-- screenshot (it starts with "M"). MOMO_TRANSFER is a placeholder:
+-- check with  SHOW COLUMNS FROM ewallet_transactions LIKE 'transaction_type';
+CREATE TABLE ewallet_transactions (
+  transaction_id         BIGINT        NOT NULL AUTO_INCREMENT,
+  reference_number       VARCHAR(50)   NOT NULL,          -- EW + timestamp + hex
+  phone_number           VARCHAR(20)   NOT NULL,          -- wallet owner
+  sender_account_number  BIGINT        NULL,
+  transaction_type       ENUM('BANK_CREDIT','EWALLET_TRANSFER','MOMO_TRANSFER')
+                                       NOT NULL,
+  amount                 DECIMAL(15,2) NOT NULL,
+  currency               VARCHAR(10)   NOT NULL DEFAULT 'SZL',
+  recipient_phone        VARCHAR(20)   NULL,
+  status                 ENUM('PENDING','SUCCESS','FAILED','REVERSED')
+                                       NOT NULL DEFAULT 'PENDING',
+  description            VARCHAR(255)  NULL,
+  created_at             TIMESTAMP     NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at             TIMESTAMP     NULL DEFAULT CURRENT_TIMESTAMP
+                                       ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (transaction_id),
+  UNIQUE KEY uq_ewallet_tx_reference (reference_number),
+  KEY idx_ewallet_tx_phone (phone_number),
+  KEY idx_ewallet_tx_sender (sender_account_number),
+  KEY idx_ewallet_tx_status (status),
+  CONSTRAINT fk_ewallet_tx_sender
+    FOREIGN KEY (sender_account_number) REFERENCES banking_app (account_number)
+) ENGINE=InnoDB;
+
+-- [CONFIRMED] created by the CBE switch work (services/institutions/
+-- ewalletInstitution.js). Customer-level ledger for wallet -> MoMo
+-- transfers. The unique key makes debits and refunds idempotent:
+-- one DEBIT and at most one REVERSAL per CBE reference.
+CREATE TABLE ewallet_ledger (
+  id              BIGINT        NOT NULL AUTO_INCREMENT,
+  cbe_reference   VARCHAR(50)   NOT NULL,                 -- shared with the CBE
+  phone_number    VARCHAR(11)   NOT NULL,
+  entry_type      ENUM('DEBIT','REVERSAL') NOT NULL,
+  counterparty    VARCHAR(11)   NOT NULL,                 -- MoMo recipient
+  amount          DECIMAL(12,2) NOT NULL,
+  balance_before  DECIMAL(12,2) NOT NULL,
+  balance_after   DECIMAL(12,2) NOT NULL,
+  created_at      TIMESTAMP     NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_ewallet_ledger_ref_type (cbe_reference, entry_type),
+  KEY idx_ewallet_ledger_phone (phone_number),
+  CONSTRAINT fk_ewallet_ledger_customer
+    FOREIGN KEY (phone_number) REFERENCES ewallet_customers (phone_number)
+) ENGINE=InnoDB;
+
+-- [INFERRED] The repository does not contain this view. Its columns
+-- are the ones ussdController.js reads; the body is reconstructed
+-- from what those columns must mean:
+--   people who were sent a voucher but have no eWallet account yet.
+
+CREATE OR REPLACE VIEW unregistered_ewallet_customers AS
+SELECT
+  v.recipient_cellphone                          AS phone_number,
+  COUNT(*)                                       AS total_vouchers,
+  SUM(v.amount)                                  AS total_voucher_amount,
+  SUM(v.remaining_balance - v.reserved_balance)  AS total_available_balance,
+  MAX(v.currency)                                AS currency
+FROM ewallet_voucher v
+WHERE v.status IN ('ACTIVE', 'PARTIALLY_USED')
+  AND NOT EXISTS (
+        SELECT 1
+        FROM ewallet_customers c
+        WHERE c.phone_number = v.recipient_cellphone
+      )
+GROUP BY v.recipient_cellphone;
+
+
+-- =====================================================================
+-- 3. MTN MoMo
+-- =====================================================================
+
+
+CREATE TABLE momo_active_users (
+  phone_number    VARCHAR(11)   NOT NULL,                 -- 268XXXXXXXX
+  fullname        VARCHAR(120)  NOT NULL,
+  balance         DECIMAL(15,2) NOT NULL DEFAULT 0.00,
+  activity        ENUM('ACTIVE','INACTIVE','SUSPENDED')
+                                NOT NULL DEFAULT 'ACTIVE',
+  pin_hash        VARCHAR(100)  NULL,                     -- bcrypt of 5-digit MoMo PIN
+  pin_created_at  TIMESTAMP     NULL,
+  PRIMARY KEY (phone_number),
+  CONSTRAINT chk_momo_balance CHECK (balance >= 0)
+) ENGINE=InnoDB;
+
+
+
+CREATE TABLE momo_transactions (
+  id              BIGINT        NOT NULL AUTO_INCREMENT,
+  cbe_reference   VARCHAR(50)   NOT NULL,                 -- shared with the CBE
+  phone_number    VARCHAR(11)   NOT NULL,
+  entry_type      ENUM('CREDIT') NOT NULL,
+  counterparty    VARCHAR(11)   NOT NULL,                 -- eWallet sender
+  amount          DECIMAL(12,2) NOT NULL,
+  balance_before  DECIMAL(12,2) NOT NULL,
+  balance_after   DECIMAL(12,2) NOT NULL,
+  created_at      TIMESTAMP     NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_momo_ledger_ref_type (cbe_reference, entry_type),
+  KEY idx_momo_ledger_phone (phone_number),
+  CONSTRAINT fk_momo_ledger_user
+    FOREIGN KEY (phone_number) REFERENCES momo_active_users (phone_number)
+) ENGINE=InnoDB;
+
+
+-- =====================================================================
+-- 4. CBE PAYMENT SWITCH
+-- =====================================================================
+
+
+
+CREATE TABLE cbe_accounts (
+  account_number  BIGINT UNSIGNED NOT NULL,
+  account_name    VARCHAR(120)    NOT NULL,
+  account_prefix  VARCHAR(20)     NOT NULL,               -- uneswa, mtn, fnb, stdBank
+  status          ENUM('ACTIVE','INACTIVE','SUSPENDED')
+                                  NOT NULL DEFAULT 'ACTIVE',
+  Total_balance   DECIMAL(14,2)   NOT NULL DEFAULT 0.00,
+  PRIMARY KEY (account_number),
+  UNIQUE KEY uq_cbe_account_prefix (account_prefix)
+) ENGINE=InnoDB;
+
+
+CREATE TABLE cbe_payment_transactions (
+  id                       BIGINT        NOT NULL AUTO_INCREMENT,
+  transaction_reference    VARCHAR(50)   NOT NULL,        -- CBE + date + random
+  idempotency_key          VARCHAR(100)  NULL,            -- sent by the app, blocks duplicates
+  voucher_code             VARCHAR(50)   NULL,            -- only for voucher based payments
+  source_institution       VARCHAR(50)   NOT NULL,        -- 'uneswa'
+  destination_institution  VARCHAR(50)   NOT NULL,        -- 'mtn'
+  sender_account           VARCHAR(30)   NOT NULL,        -- sender phone / account
+  recipient_phone          VARCHAR(30)   NOT NULL,
+  amount                   DECIMAL(15,2) NOT NULL,
+  currency                 VARCHAR(5)    NOT NULL DEFAULT 'SZL',
+  transaction_type         VARCHAR(40)   NOT NULL DEFAULT 'EWALLET_TO_MOMO',
+  status                   ENUM('PENDING','DEBITED','COMPLETED','FAILED','REVERSED')
+                                         NOT NULL DEFAULT 'PENDING',
+  response_code            VARCHAR(30)   NULL,            -- 00, 14, 51, 91, 94, 96
+  response_message         VARCHAR(255)  NULL,
+  created_at               TIMESTAMP     NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at               TIMESTAMP     NULL DEFAULT CURRENT_TIMESTAMP
+                                         ON UPDATE CURRENT_TIMESTAMP,
+  completed_at             TIMESTAMP     NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_cbe_tx_reference (transaction_reference),
+  UNIQUE KEY uq_cbe_tx_idempotency (idempotency_key),
+  KEY idx_cbe_tx_voucher (voucher_code),
+  KEY idx_cbe_tx_sender (sender_account),
+  KEY idx_cbe_tx_recipient (recipient_phone),
+  KEY idx_cbe_tx_status (status)
+) ENGINE=InnoDB;
+
+-- [CONFIRMED] screenshot plus the CBE migration. Institution-level
+-- ledger: every settlement writes a DEBIT and a CREDIT row, and a
+-- reversal writes two more. Rows are never edited or deleted.
+CREATE TABLE cbe_transaction_logs (
+  transaction_number     BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  transaction_reference  VARCHAR(50)     NOT NULL,
+  account_number         BIGINT UNSIGNED NOT NULL,
+  account_name           VARCHAR(120)    NOT NULL,
+  previous_balance       DECIMAL(14,2)   NOT NULL DEFAULT 0.00,
+  amount                 DECIMAL(14,2)   NOT NULL,
+  activity               ENUM('DEBIT','CREDIT') NOT NULL DEFAULT 'CREDIT',
+  current_balance        DECIMAL(14,2)   NOT NULL,
+  created_at             TIMESTAMP       NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (transaction_number),
+  KEY idx_log_reference (transaction_reference),
+  KEY idx_log_account (account_number),
+  CONSTRAINT fk_log_account
+    FOREIGN KEY (account_number) REFERENCES cbe_accounts (account_number),
+  CONSTRAINT fk_log_payment
+    FOREIGN KEY (transaction_reference)
+    REFERENCES cbe_payment_transactions (transaction_reference)
+) ENGINE=InnoDB;
+
+
+-- =====================================================================
+-- SEED DATA FOR THE CBE (from the cbe_accounts screenshot)
+-- =====================================================================
+
+INSERT INTO cbe_accounts (account_number, account_name, account_prefix, status, Total_balance) VALUES
+  (8080111, 'Standard Bank eSwatini',  'stdBank', 'ACTIVE', 145000000.00),
+  (9090111, 'MTN eSwatini',            'mtn',     'ACTIVE', 250000000.00),
+  (9090222, 'First National Bank',     'fnb',     'ACTIVE', 100000000.00),
+  (9090333, 'University of Eswatini',  'uneswa',  'ACTIVE',  55000000.00);
